@@ -1,0 +1,43 @@
+<html>
+<head>
+        <title>Catchment Prediction</title>
+       <link rel="stylesheet" media="screen" href ="static/bootstrap.min.css">
+       <link rel="stylesheet" href="static/bootstrap-theme.min.css">
+       <meta name="viewport" content = "width=device-width, initial-scale=1.0">
+ 
+</head>
+<body>
+
+<form  action="/batch_result" method="post" role="form" enctype = "multipart/form-data">
+    {{ form.csrf }}
+	<div class="form-group">
+		<label for="csv_file">Upload csv file for batch input:</label>
+		<input type="file" class="form-control" id="csv_file" name="csv_file">
+        <br>
+	</div>
+	<center><button type="submit" class="btn btn-success">Submit</button></center>
+</form>
+
+<div class="container">
+			{% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+ 
+        {% for message in messages %}
+            {% if "Error" not in message[1]: %}
+                <div class="alert alert-info">
+                <strong></strong> {{ message[1] }}
+                </div>
+            {% endif %}
+ 
+            {% if "Error" in message[1]: %}
+                <div class="alert alert-warning">
+                {{ message[1] }}
+                </div>
+            {% endif %}
+        {% endfor %}
+            {% endif %}
+        {% endwith %}
+</div>
+
+</body>
+</html>
