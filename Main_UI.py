@@ -1,4 +1,5 @@
-    # pythonspot.com
+# (c) 2019 Samujjwaal Dey, Ashish Joshi, Gurpreet Singh Nagpal
+
 from flask import Flask, render_template, flash, request
 from wtforms import Form, TextField, TextAreaField, validators, StringField, SubmitField
 import urllib.request
@@ -11,8 +12,10 @@ import numpy as np
 from werkzeug import secure_filename
 from numpy import genfromtxt
 
-R=6373.0
-UPLOAD_FOLDER = r'C:\Users\sag\Desktop\CatchmentPredictionUI\uploaded_csvs'
+R = 6373.0
+UPLOAD_FOLDER = '.\\uploaded_csvs'
+# UPLOAD_FOLDER = r'C:\Users\sag\Desktop\CatchmentPredictionUI\uploaded_csvs'
+
 # App config.
 DEBUG = True
 app = Flask(__name__)
@@ -36,10 +39,10 @@ def api_call(lat,long,rainwater,groundwater,soil_score,elevation):
                         {
                                 'LAT': lat,
                                 'LON': long,
-                                'RAINFALL': rainwater,   
-                                'GRDWTR': groundwater,   
-                                'Soil_Score': soil_score,   
-                                'Elevation': elevation,   
+                                'RAINFALL': rainwater,
+                                'GRDWTR': groundwater,
+                                'Soil_Score': soil_score,
+                                'Elevation': elevation,
                         }
                     ],
             },
@@ -60,7 +63,7 @@ def api_call(lat,long,rainwater,groundwater,soil_score,elevation):
 
         result = json.loads(response.read().decode("utf8"))["Results"]["Catchment_Output"][0]["Scored Labels"]
         return_array.append(int(result))
-      
+
         if int(result) == 1 :
             #flash("Conditions are suitable for catchment...")
             connection = pyodbc.connect(driver="{SQL Server}",server='sagdb.database.windows.net',database='sag',uid='sag',pwd='db@12345678')
@@ -79,21 +82,21 @@ def api_call(lat,long,rainwater,groundwater,soil_score,elevation):
                 c = 2 * atan2(sqrt(a), sqrt(1 - a))
                 distance = R * c
                 if distance<=35:
-                    
+
                     #print(distance," ",row[1]," ",row[2])
-                    
-                        
-                    cursor.execute("SELECT SUM(catchment2) AS SUM_CATCHMENT FROM VariedRainfall WHERE LAT=(?) AND LON =(?) GROUP BY LAT,LON;",row[1],row[2]  )          
+
+
+                    cursor.execute("SELECT SUM(catchment2) AS SUM_CATCHMENT FROM VariedRainfall WHERE LAT=(?) AND LON =(?) GROUP BY LAT,LON;",row[1],row[2]  )
                     row1_set=cursor.fetchall()
-                    
-                    
+
+
                     for row1 in row1_set :
                         if row1[0]<2 :
                             return_array.append([float(row[1]),float(row[2]),float(distance)])
                             #print("LAT : ",row[1],"LONG : ",row[2],"Catchment_sum : ",row1[0],"distance : ",distance)
                             #flash("LAT : "+str(row[1])+" LONG : "+str(row[2])+" Catchment_sum : "+str(row1[0])+" distance : "+str(distance))
                             g=g+1
-                        
+
             print("Count : ",g)
 
         else :
@@ -114,21 +117,21 @@ def api_call(lat,long,rainwater,groundwater,soil_score,elevation):
                 c = 2 * atan2(sqrt(a), sqrt(1 - a))
                 distance = R * c
                 if distance<=50:
-                    
+
                     #print(distance," ",row[1]," ",row[2])
-                    
-                        
-                    cursor.execute("SELECT SUM(catchment2) AS SUM_CATCHMENT FROM VariedRainfall WHERE YEAR_OBS>=2013 AND LAT=(?) AND LON =(?) GROUP BY LAT,LON;",row[1],row[2]  )          
+
+
+                    cursor.execute("SELECT SUM(catchment2) AS SUM_CATCHMENT FROM VariedRainfall WHERE YEAR_OBS>=2013 AND LAT=(?) AND LON =(?) GROUP BY LAT,LON;",row[1],row[2]  )
                     row1_set=cursor.fetchall()
-                    
-                    
+
+
                     for row1 in row1_set :
                         if row1[0] > 0 :
                             return_array.append([float(row[1]),float(row[2]),float(distance)])
                             #print("LAT : ",row[1],"LONG : ",row[2],"Catchment_sum : ",row1[0],"distance : ",distance)
                             #flash("LAT : "+str(row[1])+" LONG : "+str(row[2])+"  Catchment_sum : "+str(row1[0])+" distance : "+str(distance))
                             g=g+1
-                        
+
             #flash("Count : "+str(g))
 
 
@@ -145,7 +148,7 @@ def api_call(lat,long,rainwater,groundwater,soil_score,elevation):
 
 @app.route("/show_basic_input_map")
 def show_basic_input_map():
-    return render_template('show_basic_input_map.html')   
+    return render_template('show_basic_input_map.html')
 
 class ReusableForm(Form):
 ##    name = TextField('Name:', validators=[validators.required()])
@@ -157,7 +160,7 @@ class ReusableForm(Form):
         form = ReusableForm(request.form)
         print(form.errors)
         return render_template('batch_input.html',form=form)
-    
+
     @app.route("/", methods=['GET', 'POST'])
     def index():
         start_coords = (19.663280, 75.300293)
@@ -167,7 +170,7 @@ class ReusableForm(Form):
         form = ReusableForm(request.form)
         print(form.errors)
         return render_template('index.html',form=form)
-         
+
     @app.route("/show_map", methods=['GET', 'POST'])
     def show_map():
 ##        start_coords = (46.9540700, 142.7360300)
@@ -187,7 +190,7 @@ class ReusableForm(Form):
         if request.method == 'POST':
             return redirect (request.path)
         return render_template('show_batch_map.html',form=form)
-    
+
     @app.route("/batch_result", methods=['GET', 'POST'])
     def batch_result():
         return_matrix=[]
@@ -239,15 +242,15 @@ class ReusableForm(Form):
                         icon=folium.Icon(color='blue', icon='info-sign')
                     ).add_to(mapit)
                     folium.PolyLine([return_matrix[j][0],return_matrix[j][i]], color="blue", weight=2.5, opacity=1).add_to(mapit)
-                
+
 
             mapit.save('templates/current_batch_map.html')
         return render_template('batch_result.html',form=form)
-    
+
     @app.route("/Results", methods=['GET', 'POST'])
     def show_result():
         form = ReusableForm(request.form)
-     
+
         print(form.errors)
         if request.method == 'POST':
     ##        name=request.form['name']
@@ -302,7 +305,7 @@ class ReusableForm(Form):
 
 
                 mapit.save('templates/current_map.html')
-                
+
 
             if(return_array[0]==1):
                 flash("Conditions are suitable for catchment..!")
@@ -314,9 +317,9 @@ class ReusableForm(Form):
                 flash("This cordinate can take water from following coordinates :")
                 for i in range(2,len(return_array)):
                     flash("LAT : "+str(return_array[i][0])+"  LON : "+str(return_array[i][1])+"  Distance : "+str(return_array[i][2]))
-                    
-     
+
+
         return render_template('single_result.html', form=form)
- 
+
 if __name__ == "__main__":
     app.run()
