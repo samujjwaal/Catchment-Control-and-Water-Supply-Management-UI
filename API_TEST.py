@@ -34,14 +34,15 @@ try:
     # If the response was successful, no Exception will be raised
     response.raise_for_status()
 
-    result = response.json()
-    score = result["Results"]["Catchment_Output"][0]["Scored Labels"]
-    print(result)
-
 except HTTPError as http_error:
-    # Print the headers - they include the request ID and the timestamp, which are useful for debugging the failure
-    print(
-        f"The request failed with status code: {http_error.response.status_code}\n"
-    )
+    # Print the headers - they include the request ID and the timestamp,
+    # which are useful for debugging the failure
+    print(f"Request failure status code: {http_error.response.status_code}\n")
     print(f"Request Headers: {http_error.response.headers}\n")
     print(f"Error Object: {http_error.response.json()}")
+
+else:
+    result = response.json()
+    score = int(result["Results"]["Catchment_Output"][0]["Scored Labels"])
+    print(result)
+    print(score)
