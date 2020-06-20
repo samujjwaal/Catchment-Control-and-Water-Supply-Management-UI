@@ -2,9 +2,9 @@
 
 from flask import Flask, render_template, flash, request
 from wtforms import Form, TextField, TextAreaField, validators, StringField, SubmitField
-import urllib.request
 import json
 import requests
+from requests.exceptions import HTTPError
 import pyodbc
 import folium
 from math import sin, cos, sqrt, atan2, radians
@@ -14,7 +14,6 @@ from numpy import genfromtxt
 
 R = 6373.0
 UPLOAD_FOLDER = '.\\uploaded_csvs'
-# UPLOAD_FOLDER = r'C:\Users\sag\Desktop\CatchmentPredictionUI\uploaded_csvs'
 
 # App config.
 DEBUG = True
@@ -50,21 +49,32 @@ def api_call(lat,long,rainwater,groundwater,soil_score,elevation):
         }
     }
 
-    body = str.encode(json.dumps(data))
-
+    # Replace this with the URI and API Key for different web service
     url = 'https://ussouthcentral.services.azureml.net/workspaces/e8133a8b3c3e4e70be72cffb0e45a85c/services/95b227a3833042df9afeb7abe8cbd71b/execute?api-version=2.0&format=swagger'
-    api_key = 'LQ0Tb4vX0P7Fbb/zuGmNSauhlKrJv7WcKJps70psDo+8f1vKrV7GyX/XQCD5pJ4CUG/pNeQc/xZX+XK/T5RQkw==' # Replace this with the API key for the web service
+    api_key = 'LQ0Tb4vX0P7Fbb/zuGmNSauhlKrJv7WcKJps70psDo+8f1vKrV7GyX/XQCD5pJ4CUG/pNeQc/xZX+XK/T5RQkw=='
     headers = {'Content-Type':'application/json', 'Authorization':('Bearer '+ api_key)}
 
-    req = urllib.request.Request(url, body, headers)
-
     try:
-        response = urllib.request.urlopen(req)
+        # POST request to API
+        response = requests.post(url=url, json=api_data, headers=headers)
 
-        result = json.loads(response.read().decode("utf8"))["Results"]["Catchment_Output"][0]["Scored Labels"]
-        return_array.append(int(result))
+        # If the response was successful, no Exception will be raised
+        response.raise_for_status()
 
-        if int(result) == 1 :
+    except HTTPError as http_error:
+        # Print the headers - they include the request ID and the timestamp,
+        # which are useful for debugging the failure
+        print(f"Request failure status code: {http_error.response.status_code}\n")
+        print(f"Request Headers: {http_error.response.headers}\n")
+        print(f"Error Object: {http_error.response.json()}")
+
+    else:
+        result = response.json()
+        score = int(result["Results"]["Catchment_Output"][0]["Scored Labels"])
+
+        return_array.append(score)
+
+        if score == 1 :
             #flash("Conditions are suitable for catchment...")
             connection = pyodbc.connect(driver="{SQL Server}",server='sagdb.database.windows.net',database='sag',uid='sag',pwd='db@12345678')
             cursor = connection.cursor()
@@ -133,14 +143,6 @@ def api_call(lat,long,rainwater,groundwater,soil_score,elevation):
                             g=g+1
 
             #flash("Count : "+str(g))
-
-
-    except urllib.error.HTTPError as error:
-        print("The request failed with status code: " + str(error.code))
-
-        # Print the headers - they include the requert ID and the timestamp, which are useful for debugging the failure
-        print(error.info())
-        print(json.loads(error.read().decode("utf8", 'ignore')))
 
     print(return_array)
     return return_array
